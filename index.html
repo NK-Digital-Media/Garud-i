@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garuda AI Core</title>
+    <style>
+        body { background: radial-gradient(circle, #001a1a 0%, #000 100%); color: #00f2ff; font-family: 'Segoe UI', sans-serif; margin: 0; text-align: center; display: flex; flex-direction: column; min-height: 100vh; }
+        .header { padding: 15px; border-bottom: 2px solid #00f2ff; background: rgba(0,0,0,0.8); box-shadow: 0 0 15px #00f2ff; }
+        .orb { width: 100px; height: 100px; border: 3px solid #00f2ff; border-radius: 50%; margin: 25px auto; box-shadow: 0 0 25px #00f2ff; display: flex; align-items: center; justify-content: center; font-weight: bold; animation: glow 2s infinite; }
+        @keyframes glow { 0% {box-shadow: 0 0 10px #00f2ff;} 50% {box-shadow: 0 0 30px #00f2ff;} 100% {box-shadow: 0 0 10px #00f2ff;} }
+        .btn-mic { background: #00f2ff; color: #000; border: none; padding: 18px 45px; border-radius: 50px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,242,255,0.4); margin: 10px; transition: 0.3s; }
+        .btn-mic:active { transform: scale(0.95); background: #fff; }
+        #res-box { width: 90%; max-width: 500px; background: rgba(0,30,30,0.8); border: 1px solid #00f2ff; padding: 15px; margin: 15px auto; border-radius: 12px; min-height: 60px; color: #fff; text-align: left; font-family: monospace; box-shadow: inset 0 0 10px #000; }
+        #chart-area { width: 95%; height: 380px; margin: 10px auto; border: 1px solid #333; border-radius: 15px; overflow: hidden; background: #131722; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 style="margin:0; letter-spacing: 2px;">🦅 GARUDA AI CORE</h1>
+        <small style="color: gold;">STABLE VERSION 2.0 | ACTIVE</small>
+    </div>
+
+    <div class="orb" id="orb">READY</div>
+
+    <button class="btn-mic" onclick="startGaruda()">SAY COMMAND</button>
+
+    <div id="res-box">
+        <div id="msg">> Waiting for Neeraj...</div>
+    </div>
+
+    <div id="chart-area">
+        <div id="tradingview_widget"></div>
+    </div>
+
+    <script src="https://s3.tradingview.com/tv.js"></script>
+    <script>
+        // TradingView Setup
+        new TradingView.widget({ "autosize": true, "symbol": "BINANCE:BTCUSDT", "interval": "15", "theme": "dark", "style": "1", "container_id": "tradingview_widget" });
+
+        const KEY = "AIzaSyAc2mlvV5BtK0uL6Jg1896qF5Y4BdAARMw";
+
+        function speak(txt) {
+            window.speechSynthesis.cancel();
+            const ut = new SpeechSynthesisUtterance(txt);
+            ut.lang = 'hi-IN';
+            ut.rate = 1.1;
+            window.speechSynthesis.speak(ut);
+        }
+
+        async function startGaruda() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) { alert("Bhai, Chrome browser use karo!"); return; }
+            
+            const rec = new SpeechRecognition();
+            rec.lang = 'hi-IN';
+
+            rec.onstart = () => { 
+                document.getElementById('orb').innerText = "LISTENING";
+                document.getElementById('orb').style.borderColor = "white";
+                document.getElementById('msg').innerText = "> Listening to your voice...";
+            };
+
+            rec.onerror = () => {
+                document.getElementById('msg').innerText = "> Mic Error! Permission check karo.";
+                document.getElementById('orb').innerText = "ERROR";
+            };
+
+            rec.onresult = async (e) => {
+                const userMsg = e.results[0][0].transcript;
+                document.getElementById('msg').innerText = "> Neeraj: " + userMsg;
+                document.getElementById('orb').innerText = "THINKING";
+                document.getElementById('orb').style.borderColor = "gold";
+
+                try {
+                    // Using Stable V1 API
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: "Tum Neeraj ke smart assistant Garuda AI ho. Iska hindi mein ek chhota aur dhasu reply do: " + userMsg }] }] })
+                    });
+                    
+                    const d = await r.json();
+                    const reply = d.candidates[0].content.parts[0].text;
+                    
+                    document.getElementById('msg').innerText = "> Garuda: " + reply;
+                    document.getElementById('orb').innerText = "SPEAKING";
+                    document.getElementById('orb').style.borderColor = "#00f2ff";
+                    speak(reply);
+                    
+                    setTimeout(() => { document.getElementById('orb').innerText = "ACTIVE"; }, 4000);
+                } catch (err) {
+                    document.getElementById('msg').innerText = "> Brain Error! Page refresh karke dekho.";
+                    document.getElementById('orb').innerText = "RETRY";
+                }
+            };
+            rec.start();
+        }
+    </script>
+</body>
+</html>
